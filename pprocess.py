@@ -54,10 +54,19 @@ def grab_content_html(html):
     return visible_texts
 
 
+""" Depricating and using method of the same name in train_classifier
 def make_features(data):
     corpus = [' '.join(v['processed_text']) for v in data.itervalues()]
     vectorizer = CountVectorizer(min_df=1)
     X = vectorizer.fit_transform(corpus)
+"""
+def make_features(data):
+    corpus = [' '.join(v['processed_text']) for v in data.itervalues()]
+    vectorizer = CountVectorizer(min_df=1)
+    X = vectorizer.fit_transform(corpus)
+    y = [v['label'] for v in data.itervalues()]
+
+    return X, y, vectorizer
 
 
 if __name__ == '__main__':
@@ -70,6 +79,7 @@ if __name__ == '__main__':
         processed_text = process_text(tokens[0])
         data[i] = {'processed_text': processed_text,
                    'label': int(tokens[1].strip())}
+    print data
 
     # open and check output with
     #with open('data/processed_text.pkl', 'r') as f:
