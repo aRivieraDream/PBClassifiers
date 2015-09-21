@@ -97,16 +97,43 @@ def process_tsv(tsv):
     return data
 
 
-def update_cat_map(story_total, story_word_list, existing_map):
-
-
-
-def map_story(story, existing_map):
+def update_cat_map(total_words, story_word_list, cat_maps):
     """
-    Take an existing_map of {'keyword_map':{'w1':[occ, docs]},
-    total_docs, total_words} and appends data
-    from new story
+    Hanldes updating multiple cat_maps to accomodate OT category
+    Take parsed story info and update each cat_map in cat_maps
+    story_total = total words from story
+    story_word_list = dic{'w1':occ of 1, 'w2':occ of 2,...}
+    cat_maps = [cat_map1, cat_map2, ...]
+    cat_map = {'keyword_map':{'w1':[occ, docs]},
+    total_docs, total_words}
     """
+    # get list of existing keywords, doc counts, word counts
+    existing_word_list = cat_map['keyword_map']
+    # update keyword map of counts from existing_map
+    for word in story_word_list:
+        # counts = [total occ, total docs]
+        counts = [story_word_list[word], 1]
+        # add to other occ if word found in prev story
+        for i in range(0, len(cat_maps)): # does this update cat_maps or do I need to replace?
+            # get list of existing keywords, doc counts, word counts
+            cat_map = cat_maps[i]
+            existing_word_list = cat_map['keyword_map']
+            if word in existing_word_list:
+                prev_counts = existing_word_list[word]
+                counts[0] = counts[0] + prev_counts[0]
+                counts[1] = counts[1] + prev_counts[1]
+            existing_word_list[word] = counts
+            cat_map['keyword_map'] = existing_word_list
+            # update total word count, and total docs in existing_map
+            cat_map['total_words'] = cat_map['total_words'] + total_words
+            cat_map['total_docs'] = cat_map['total_docs'] + 1
+            cat_maps[i] = cat_map # update!!!
+    return cat_maps
+
+
+
+def map_story(story):
+    """Count occ of words in story and total words"""
     total_words = 0
     # create new map of words in story
     # {'w1':occ, 'w2':occ,..., 'wn':occ}
@@ -121,8 +148,9 @@ def map_story(story, existing_map):
             word_occ = story_word_list.get(word) + 1
         # map new/updated count of occ to story_word_list
         story_word_list[word] = word_occ
-    # return total_words, story_word_list
-    """vvv-Consider making this a separate method during refactor-vvv"""
+    return total_words, story_word_list
+    """
+    # vvv-Consider making this a separate method during refactor-vvv
     # get list of existing keywords, doc counts, word counts
     existing_word_list = existing_map['keyword_map']
     # update keyword map of counts from existing_map
@@ -140,10 +168,11 @@ def map_story(story, existing_map):
     existing_map['total_words'] = existing_map['total_words'] + total_words
     existing_map['total_docs'] = existing_map['total_docs'] + 1
     return existing_map
-    """^^^-Consider making this a separate method during refactor-^^^"""
+    # ^^^-Consider making this a separate method during refactor-^^^
+    """
 
 
-def vectorize(data):
+def map_data(data): # formerly vectorize(data)
     """ **PROBABLY A WORSE IMPLEMENTATION OF make_features()**
     Takes a dictionary from process_tsv and returns
     Dict of Dict of Lists:
@@ -153,23 +182,25 @@ def vectorize(data):
         ...
         OT:{keyword map:{all keywords from all categories}, total docs,
             total words}}}
-    TODO: Handle OT category
+    TODO: handle multipe maps in this method rather than update_cat_map
     """
-    # map for storing word counts for all categories
     category_map = {}
     # label->category map: story labels should follow this indexing scheme
     categories = ['VC', 'PE', 'MA', 'OT']
-    # create a new map for each category
     for cat in categories:
         category_map[cat] = {'keyword_map':{}, 'total_words':0, 'total_docs':0}
 
     for story in data:
         clean_story = story['processed_text']
+        total_words, story_word_list = map_story(clean_story)
         # grab correct category based on label (stories[label] = 1)
-        label = categories[story['label']]
-        existing_map = category_map[label]
-        updated_map = map_story(clean_story, existing_map)
-        category_map[label] = updated_map
+        label = categories[story['label']] # type(label) == string
+        maps_impacted = [category_map[label], category_map['OT']] # OT always
+        maps_impacted = update_cat_map(total_words,
+                                        story_word_list,
+                                        maps_impacted)
+        category_map[label] = maps_impacted[0]
+        category_map['OT'] = maps_impacted[1]
     return category_map
 
 
@@ -178,7 +209,8 @@ if __name__ == '__main__':
     tsv_name = 'data/sample_text_labeled.tsv'
     # remove stopwords and lemmatize
     data = process_tsv(tsv_name)
-    vectorize(data)
+    category_map = map_data(data)
+    print category_map
 
 
     # ' '.join(sample_string.split('\t'))
