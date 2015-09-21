@@ -117,6 +117,9 @@ def map_doc(story, existing_map):
             word_occ = story_word_list.get(word) + 1
         # map new/updated count of occ to story_word_list
         story_word_list[word] = word_occ
+    # total_docs = 1 # used if compiling in separate method
+    # return total_words, total_docs, story_word_list
+    """vvv-Consider making this a separate method during refactor-vvv"""
     # get list of existing keywords, doc counts, word counts
     existing_word_list = existing_map['keyword_map']
     # update keyword map of counts from existing_map
@@ -133,7 +136,8 @@ def map_doc(story, existing_map):
     # update total word count, and total docs in existing_map
     existing_map['total_words'] = existing_map['total_words'] + total_words
     existing_map['total_docs'] = existing_map['total_docs'] + 1
-    return total_words, word_freq, word_list
+    return existing_map
+    """^^^-Consider making this a separate method during refactor-^^^"""
 
 
 def vectorize(data):
@@ -142,20 +146,15 @@ def vectorize(data):
     List of categories
     List with doc count of each category
     Dict of Dict of Lists:
-        {VC:{keword map: {w1:[occ, docs] w2:[occ, docs],...], total docs,
+        {VC:{keword map:{w1:[occ, docs] w2:[occ, docs],...]}, total docs,
             total words},
-        PE{keyword map:[], doc occ:[], word occ:[], total docs,
-            total words},
+        PE:{keyword map:{}, total docs, total words},
         ...
-        OT{keyword map:[all keywords from all categories], doc occ:[],
-        word occ:[], total docs, total words}}}
+        OT:{keyword map:{all keywords from all categories}, total docs,
+            total words}}}
     """
-    category_map = {'VC':{'keyword_map':[]}, 'PE':{}, 'M&A':{}, 'OT':{}}
-    vckm = []
-    makm = []
-    pekem = []
-    otkm = []
-
+    category_map = {'VC':{'keyword_map':{}, 'total_words':0, 'total_docs':0},
+        'PE':{}, 'M&A':{}, 'OT':{}}
 
 
 if __name__ == '__main__':
