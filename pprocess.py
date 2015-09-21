@@ -10,7 +10,6 @@ import cPickle as pkl
 import string
 import re
 
-
 # if this crashes open up a python session and run nltk.download() and download
 # the appropriate corpus/model from the pop up menu
 cached_stop_words = stopwords.words('english')
@@ -107,9 +106,6 @@ def update_cat_map(total_words, story_word_list, cat_maps):
     cat_map = {'keyword_map':{'w1':[occ, docs]},
     total_docs, total_words}
     """
-    # get list of existing keywords, doc counts, word counts
-    existing_word_list = cat_map['keyword_map']
-    # update keyword map of counts from existing_map
     for word in story_word_list:
         # counts = [total occ, total docs]
         counts = [story_word_list[word], 1]
@@ -172,7 +168,7 @@ def map_story(story):
     """
 
 
-def map_data(data): # formerly vectorize(data)
+def map_data(data): 
     """ **PROBABLY A WORSE IMPLEMENTATION OF make_features()**
     Takes a dictionary from process_tsv and returns
     Dict of Dict of Lists:
@@ -189,12 +185,13 @@ def map_data(data): # formerly vectorize(data)
     categories = ['VC', 'PE', 'MA', 'OT']
     for cat in categories:
         category_map[cat] = {'keyword_map':{}, 'total_words':0, 'total_docs':0}
-
     for story in data:
-        clean_story = story['processed_text']
+        story_obj = data[story]
+        clean_story = story_obj['processed_text']
         total_words, story_word_list = map_story(clean_story)
         # grab correct category based on label (stories[label] = 1)
-        label = categories[story['label']] # type(label) == string
+        print story_obj['label']
+        label = categories[story_obj['label']] # type(label) == string
         maps_impacted = [category_map[label], category_map['OT']] # OT always
         maps_impacted = update_cat_map(total_words,
                                         story_word_list,
@@ -210,7 +207,10 @@ if __name__ == '__main__':
     # remove stopwords and lemmatize
     data = process_tsv(tsv_name)
     category_map = map_data(data)
-    print category_map
+    import pprint
+    output = open('TestOutput.txt', 'w')
+    pprint.pprint(data, output)
+    pprint.pprint(category_map, output)
 
 
     # ' '.join(sample_string.split('\t'))
