@@ -62,7 +62,7 @@ def make_features(data):
 """
 def make_features(data):
     """
-    creates a matrix of stories with each row representing a story,
+    Create a matrix of stories with each row representing a story,
     each column a word in the corpus, and each value the occurences.
 
     another vector represents the category of each story-matching with the columns.
@@ -98,22 +98,41 @@ def process_tsv(tsv):
 
 
 def map_doc(story, existing_map):
-    # get list of existing keywords, doc counts, word counts
-    keword_map = existing_map['keyword_map']
+    """
+    Take an existing_map of {'keyword_map':{'w1':[occ, docs]},
+    total_docs, total_words} and appends data
+    from new story
+    """
     total_words = 0
-    # w1:[docs w/ word, times word appears] for this doc only
-    word_list = {}
-    ## grab word
-    next_word = 'placeholder' # replace with actual word in bucket
-    total_words = total_words + 1
-    prev = word_list.get(next_word)
-    counts = [1, 1]
-    if len(prev) == 2:
-        counts[0] = counts[0] + prev[0]
-        counts[1] = counts[1] + prev[1]
-    word_list[next_word] = counts
-    # add word list to rest of this category
-    # 
+    # create new map of words in story
+    # {'w1':occ, 'w2':occ,..., 'wn':occ}
+    # where occ = times word appears for this doc only
+    story_word_list = {}
+    # grab words from story and increment counts of occ accordingly
+    for word in story:
+        total_words = total_words + 1
+        word_occ = 1
+        # add count to existing if word already occured in story
+        if word in story_word_list:
+            word_occ = story_word_list.get(word) + 1
+        # map new/updated count of occ to story_word_list
+        story_word_list[word] = word_occ
+    # get list of existing keywords, doc counts, word counts
+    existing_word_list = existing_map['keyword_map']
+    # update keyword map of counts from existing_map
+    for word in story_word_list:
+        # counts = [total occ, total docs]
+        counts = [story_word_list[word], 1]
+        # add to other occ if word found in prev story
+        if word in existing_word_list:
+            prev_counts = existing_word_list[word]
+            counts[0] = counts[0] + prev_counts[0]
+            counts[1] = counts[1] + prev_counts[1]
+        existing_word_list[word] = counts
+    existing_map['keyword_map'] = existing_word_list
+    # update total word count, and total docs in existing_map
+    existing_map['total_words'] = existing_map['total_words'] + total_words
+    existing_map['total_docs'] = existing_map['total_docs'] + 1
     return total_words, word_freq, word_list
 
 
@@ -123,8 +142,8 @@ def vectorize(data):
     List of categories
     List with doc count of each category
     Dict of Dict of Lists:
-        {VC:{keword map: [w1, w2,...], doc occurences: [5, 10,...],
-            word occurences:[77, 23,...], total docs, total words},
+        {VC:{keword map: {w1:[occ, docs] w2:[occ, docs],...], total docs,
+            total words},
         PE{keyword map:[], doc occ:[], word occ:[], total docs,
             total words},
         ...
