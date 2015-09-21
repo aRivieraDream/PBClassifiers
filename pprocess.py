@@ -83,7 +83,7 @@ def process_tsv(tsv):
     Story 2         | 0
 
     returns a dictionary with the format:
-    {Story 1:{processed_text:['word1', 'word2', 'word1', 'word3'], label:1}
+    {Story 1:{processed_text:['word1', 'word2', 'word1', 'word3'], label:1},
     Story 2:{processed_text:['word2', 'word2', 'word1', 'word5'], label:0}}
     """
     # Note I stripped tab characters ('\t') before I dumped them in the tsv file.
@@ -97,7 +97,11 @@ def process_tsv(tsv):
     return data
 
 
-def map_doc(story, existing_map):
+def update_cat_map(story_total, story_word_list, existing_map):
+
+
+
+def map_story(story, existing_map):
     """
     Take an existing_map of {'keyword_map':{'w1':[occ, docs]},
     total_docs, total_words} and appends data
@@ -117,8 +121,7 @@ def map_doc(story, existing_map):
             word_occ = story_word_list.get(word) + 1
         # map new/updated count of occ to story_word_list
         story_word_list[word] = word_occ
-    # total_docs = 1 # used if compiling in separate method
-    # return total_words, total_docs, story_word_list
+    # return total_words, story_word_list
     """vvv-Consider making this a separate method during refactor-vvv"""
     # get list of existing keywords, doc counts, word counts
     existing_word_list = existing_map['keyword_map']
@@ -141,10 +144,8 @@ def map_doc(story, existing_map):
 
 
 def vectorize(data):
-    """
+    """ **PROBABLY A WORSE IMPLEMENTATION OF make_features()**
     Takes a dictionary from process_tsv and returns
-    List of categories
-    List with doc count of each category
     Dict of Dict of Lists:
         {VC:{keword map:{w1:[occ, docs] w2:[occ, docs],...]}, total docs,
             total words},
@@ -152,9 +153,25 @@ def vectorize(data):
         ...
         OT:{keyword map:{all keywords from all categories}, total docs,
             total words}}}
+    TODO: Handle OT category
     """
-    category_map = {'VC':{'keyword_map':{}, 'total_words':0, 'total_docs':0},
-        'PE':{}, 'M&A':{}, 'OT':{}}
+    # map for storing word counts for all categories
+    category_map = {}
+    # label->category map: story labels should follow this indexing scheme
+    categories = ['VC', 'PE', 'MA', 'OT']
+    # create a new map for each category
+    for cat in categories:
+        category_map[cat] = {'keyword_map':{}, 'total_words':0, 'total_docs':0}
+
+    for story in data:
+        clean_story = story['processed_text']
+        # grab correct category based on label (stories[label] = 1)
+        label = categories[story['label']]
+        existing_map = category_map[label]
+        updated_map = map_story(clean_story, existing_map)
+        category_map[label] = updated_map
+    return category_map
+
 
 
 if __name__ == '__main__':
