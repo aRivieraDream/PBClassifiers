@@ -179,28 +179,56 @@ def map_data(data):
 def excel_print(category_map, out):
     out.write('Category,'
                 'Word,'
-                'Occurences,'
-                'Document Occurences,'
-                'Inter-Category Frequency,'
+                'Category Occurences,'
+                'Category Document Occurences,'
+                'Frequency in Category,'
                 'Documents in Category,'
-                'Words in Category')
+                'Words in Category,'
+                'All Occurences,'
+                'All Document Occurences,'
+                'Frequency in All Categories,'
+                'Intra-Category Frequency,'
+                'Documents in All Categories,'
+                'Words in All Categories'
+                '\n')
+    # get OT counts for comparison calcs
+    ot_map = category_map['OT']
+    ot_dtotal = ot_map['total_docs']
+    ot_wtotal = ot_map['total_words']
+    ot_wmap = ot_map['keyword_map']
+    # get cat counts
     for cat in category_map:
         cat_map = category_map[cat]
         cat_docs = cat_map['total_docs']
         cat_words = cat_map['total_words']
         word_map = cat_map['keyword_map']
         for word in word_map:
-            word_occ = word_map[word]
-            occ = word_occ[0]
-            doc_occ = word_occ[1]
-            cat_freq = doc_occ * 1.0 / cat_docs
-            out.write('%r,%r,%r,%r,%r,%r,%r') % (cat,
-                                                word,
-                                                occ,
-                                                doc_occ,
-                                                cat_freq,
-                                                cat_docs,
-                                                cat_words)
+            if cat is not 'OT':
+                word_occ = word_map[word]
+                occ = word_occ[0]
+                doc_occ = word_occ[1]
+                cat_freq = doc_occ * 1.0 / cat_docs
+
+                ot_wocc = ot_wmap[word]
+                ot_occ = ot_wocc[0]
+                ot_docc = ot_wocc[1]
+                ot_freq = ot_docc * 1.0 / ot_dtotal
+
+                intra = cat_freq / ot_freq
+                out.write('%s,%s,%r,%r,%r,%r,%r,%r,%r,%r,%r,%r,%r\n' % (
+                    cat,
+                    word,
+                    occ,
+                    doc_occ,
+                    cat_freq,
+                    cat_docs,
+                    cat_words,
+                    ot_occ,
+                    ot_docc,
+                    ot_freq,
+                    intra,
+                    ot_dtotal,
+                    ot_wtotal))
 
 
 if __name__ == '__main__':
