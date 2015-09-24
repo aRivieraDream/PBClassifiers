@@ -113,7 +113,7 @@ def map_story(processed_text):
             word_occ = story_word_list.get(word) + word_occ
         # map new/updated count of occ to story_word_list
         story_word_list[word] = word_occ
-        temp_output.write('found %i occurences of %r; %i total words\n' % (word_occ, word, total_words))
+        # temp_output.write('found %i occurences of %r; %i total words\n' % (word_occ, word, total_words))
     return total_words, story_word_list
 
 
@@ -171,22 +171,52 @@ def map_data(data):
         if story_cat_map is not ot_map:
             print 'processing %r words from a %r story' % (total_words, story_cat)
             update_cat_counts(total_words, story_word_list, story_cat_map)
+        print 'adding %r words to OT from a %r story' % (total_words, story_cat)
         update_cat_counts(total_words, story_word_list, ot_map)
     return category_map
 
 
+def excel_print(category_map, out):
+    out.write('Category,'
+                'Word,'
+                'Occurences,'
+                'Document Occurences,'
+                'Inter-Category Frequency,'
+                'Documents in Category,'
+                'Words in Category')
+    for cat in category_map:
+        cat_map = category_map[cat]
+        cat_docs = cat_map['total_docs']
+        cat_words = cat_map['total_words']
+        word_map = cat_map['keyword_map']
+        for word in word_map:
+            word_occ = word_map[word]
+            occ = word_occ[0]
+            doc_occ = word_occ[1]
+            cat_freq = doc_occ * 1.0 / cat_docs
+            out.write('%r,%r,%r,%r,%r,%r,%r') % (cat,
+                                                word,
+                                                occ,
+                                                doc_occ,
+                                                cat_freq,
+                                                cat_docs,
+                                                cat_words)
+
+
 if __name__ == '__main__':
     # TODO: remove test prints below
-    temp_output = open('temp_output.txt', 'a')
-    temp_output.truncate()
+    temp_output = open('temp_output.txt', 'w')
+    output = open('data/word_counts.csv', 'w')
 
     tsv_name = 'data/sample_text_labeled.tsv'
     # remove stopwords and lemmatize
     data = process_tsv(tsv_name)
     category_map = map_data(data)
-    output = open('TestOutput.txt', 'w')
-    pprint.pprint(data, output)
-    pprint.pprint(category_map, output)
+    excel_print(category_map, output)
+    # pprint.pprint(data, temp_output)
+    pprint.pprint(category_map, temp_output)
+    temp_output.close()
+    output.close()
 
 
     # ' '.join(sample_string.split('\t'))
